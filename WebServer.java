@@ -3,6 +3,7 @@ import java.net.Socket;
 import java.net.ServerSocket;
 import java.util.*;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 
 public class WebServer{
 	static final int port = 8080;
@@ -11,6 +12,7 @@ public class WebServer{
 		try {
 			ServerSocket serveSock = new ServerSocket(port);
 			Socket sock = serveSock.accept();
+			
 			BufferedReader br = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			String input = br.readLine();
 			String[] tokens = input.split(" ");
@@ -36,7 +38,6 @@ public class WebServer{
 				dataStream.write(stuff,0,stuff.length);
 				dataStream.flush();
 			}
-
 		} catch (Exception e){
 			e.printStackTrace();
 		}
