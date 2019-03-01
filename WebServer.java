@@ -3,43 +3,58 @@ import java.net.Socket;
 import java.net.ServerSocket;
 import java.util.*;
 import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 
 public class WebServer{
+	// I'll move this later
+	static class Client extends Thread {
+		private Socket sock = null;
+		public Client(Socket sock) {
+			this.sock = sock;
+		}
+		public void run() {
+			try {
+				BufferedReader br = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+				String input = br.readLine();
+				String[] tokens = input.split(" ");
+				System.out.println(input);
+
+				String method = tokens[0];
+				if (method.equals("GET")){
+					String fileName = tokens[1];
+					StringBuilder sb = new StringBuilder("files");
+					sb.append(tokens[1]);
+					fileName = sb.toString();
+					File file = new File(fileName);
+					byte[] stuff = Files.readAllBytes(file.toPath());
+					PrintWriter out = new PrintWriter(sock.getOutputStream());
+
+					out.print(getHeader(stuff.length));
+					// need a blank line before content
+					out.println(); 
+					out.flush();
+
+					BufferedOutputStream dataStream = new BufferedOutputStream(sock.getOutputStream());
+
+					dataStream.write(stuff,0,stuff.length);
+					dataStream.flush();
+				}
+				sock.close();
+			} catch (Exception e){
+				e.printStackTrace();
+			}
+
+		}
+	}
 	static final int port = 8080;
 
 	public static void main(String[] args) {
 		try {
 			ServerSocket serveSock = new ServerSocket(port);
-			Socket sock = serveSock.accept();
-			
-			BufferedReader br = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-			String input = br.readLine();
-			String[] tokens = input.split(" ");
-			System.out.println(input);
-
-			String method = tokens[0];
-			if (method.equals("GET")){
-				String fileName = tokens[1];
-				StringBuilder sb = new StringBuilder("files");
-				sb.append(tokens[1]);
-				fileName = sb.toString();
-				File file = new File(fileName);
-				byte[] stuff = Files.readAllBytes(file.toPath());
-				PrintWriter out = new PrintWriter(sock.getOutputStream());
-
-				out.print(getHeader(stuff.length));
-				// need a blank line before content
-				out.println(); 
-				out.flush();
-
-				BufferedOutputStream dataStream = new BufferedOutputStream(sock.getOutputStream());
-
-				dataStream.write(stuff,0,stuff.length);
-				dataStream.flush();
-			}
-		} catch (Exception e){
-			e.printStackTrace();
+			while (true) {
+				new Client(serveSock.accept()).start();
+			} 
+		}catch (Exception e){
+				e.printStackTrace();
 		}
 	} 
 
@@ -57,3 +72,4 @@ public class WebServer{
 		sb.append(line + "\n");
 	}
 }
+
